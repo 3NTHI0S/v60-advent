@@ -1,0 +1,17 @@
+{
+  "name": "V60 Coffee Advent Calendar",
+  "short_name": "V60 Advent",
+  "description": "25 surprise coffees in a V60-shaped advent calendar.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8f5ec",
+  "theme_color": "#064934",
+  "orientation": "any",
+  "icons": [
+    {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

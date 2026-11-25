@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#064934">
+  <meta name="description" content="An interactive V60-shaped advent calendar with 25 surprise coffees, daily door unlocks and saved reveals.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="V60 Advent">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>V60 Coffee Advent Calendar · 2026</title>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+<main class="page">
+  <header class="header">
+    <div class="heading">
+      <p class="kicker">The coffee countdown · 2026</p>
+      <h1>25 days of coffee</h1>
+      <p class="subtitle">A new brew behind every door · 1–25 December 2026</p>
+    </div>
+    <nav class="controls" aria-label="Calendar controls">
+      <span id="progress" class="progress" aria-live="polite">0 / 25 opened</span>
+      <button type="button" id="installBtn" class="action primary" hidden>Install app</button>
+      <button type="button" id="backupBtn" class="action">Export backup</button>
+      <button type="button" id="importBtn" class="action quiet">Import backup</button>
+    </nav>
+  </header>
+
+  <section id="testBanner" class="test-banner" aria-label="Test mode settings" hidden>
+    <div>
+      <strong>Test mode</strong>
+      <p>All doors are unlocked. Test coffee assignments and opened doors are separate from your real calendar.</p>
+    </div>
+    <div class="test-actions">
+      <button type="button" id="shuffleBtn" class="action gold">Reshuffle test coffees</button>
+      <button type="button" id="resetTestBtn" class="action">Close all test doors</button>
+      <a class="exit-link" href="./index.html">Exit test mode</a>
+    </div>
+  </section>
+
+  <div class="calendar-wrap">
+    <section class="calendar" aria-label="Green V60 Advent calendar, doors 1 to 25">
+      <svg class="v60" viewBox="0 0 1200 850" aria-hidden="true" preserveAspectRatio="xMidYMid meet">
+        <path class="handle" d="M1009 179 C1121 136 1190 182 1183 275 C1171 407 1073 490 904 522 L882 454 C1018 419 1109 350 1127 271 C1140 219 1105 207 1043 231 Z"/>
+        <path class="body" d="M128 81 Q600 -13 1072 81 Q1094 89 1080 118 L846 688 Q826 734 846 750 L929 769 Q947 787 917 795 L286 795 Q255 784 280 769 L357 750 Q378 730 356 685 L118 120 Q103 91 128 81 Z"/>
+        <path class="edge" d="M146 89 Q600 9 1055 89"/>
+        <ellipse class="base" cx="600" cy="796" rx="392" ry="39"/>
+      </svg>
+      <div id="row1" class="door-row row1"></div>
+      <div id="row2" class="door-row row2"></div>
+      <div id="row3" class="door-row row3"></div>
+      <div id="row4" class="door-row row4"></div>
+      <div id="row5" class="door-row row5"></div>
+      <div id="row6" class="door-row row6"></div>
+    </section>
+  </div>
+  <div class="meta">
+    <span id="unlockStatus" aria-live="polite">Door 1 unlocks on 1 December 2026.</span>
+    <span>25 surprise coffees. Your opened doors stay open.</span>
+  </div>
+  <p class="fineprint">Dates use your device's local time. You can open previous days late and revisit any coffee. Progress is saved in this browser, including when offline after the app is installed. Export a backup before clearing browser data or changing devices.</p>
+  <p class="fineprint install-hint">To install on Android, open the hosted website in Chrome and choose <strong>Add to Home screen</strong> or <strong>Install app</strong> from Chrome's menu.</p>
+</main>
+
+<dialog id="lockedDialog" aria-labelledby="lockedTitle">
+  <div class="modal-inner">
+    <div class="modal-top">
+      <div><p class="kicker">Not just yet</p><h2 id="lockedTitle">This door is still locked</h2></div>
+      <button type="button" class="close" aria-label="Close message" data-close="lockedDialog">×</button>
+    </div>
+    <p id="lockedMessage" class="helper"></p>
+    <button type="button" class="action primary" data-close="lockedDialog">Back to calendar</button>
+  </div>
+</dialog>
+
+<dialog id="revealDialog" aria-labelledby="revealTitle">
+  <div class="reveal">
+    <div class="modal-top right"><button type="button" class="close" aria-label="Close reveal" data-close="revealDialog">×</button></div>
+    <span id="revealDay" class="day">December 1</span>
+    <div class="cup" aria-hidden="true"><span class="steam">〰</span>☕</div>
+    <p class="kicker">Your coffee reveal</p>
+    <h2 id="revealTitle"></h2>
+    <p id="revealHint">This door is now open and will stay open.</p>
+    <button type="button" class="action primary" data-close="revealDialog">Back to calendar</button>
+  </div>
+</dialog>
+
+<input type="file" id="backupFile" accept="application/json,.json" hidden>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
