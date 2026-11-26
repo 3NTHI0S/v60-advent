@@ -1,5 +1,5 @@
 /* Offline application shell. Update CACHE_NAME whenever deploying changed files. */
-const CACHE_NAME = 'v60-advent-2026-pwa-v1';
+const CACHE_NAME = 'v60-advent-2026-pwa-v2';
 const APP_FILES = [
   './',
   './index.html',

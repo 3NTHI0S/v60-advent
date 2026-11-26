@@ -32,7 +32,7 @@
   ]);
   // Keep the pre-PWA production key so existing opened-door progress survives the upgrade.
   const PRODUCTION_KEY = 'coffee-v60-advent-2026-personal-v2';
-  const TEST_KEY = 'coffee-v60-advent-2026-test-v1';
+  const TEST_KEY = 'coffee-v60-advent-2026-test-v2';
   const CALENDAR_ID = 'v60-2026-personal';
   const DAY_GROUPS = [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10], [11, 12, 13, 14, 15], [16, 17, 18, 19, 20], [21, 22, 23, 24], [25]];
   const $ = id => document.getElementById(id);
@@ -50,33 +50,63 @@
     const expected = [...FIXED_ASSIGNMENTS].sort();
     return JSON.stringify([...value].sort()) === JSON.stringify(expected);
   }
-  function loadState() {
-    try {
-      const key = TEST_MODE ? TEST_KEY : PRODUCTION_KEY;
-      const saved = JSON.parse(localStorage.getItem(key));
-      return {
-        assignments: TEST_MODE && validAssignments(saved?.assignments) ? [...saved.assignments] : [...FIXED_ASSIGNMENTS],
-        opened: validOpened(saved?.opened) || []
-      };
-    } catch (_) {
-      return { assignments: [...FIXED_ASSIGNMENTS], opened: [] };
+  function readSaved(key) {
+    try { return JSON.parse(localStorage.getItem(key)); } catch (_) { return null; }
+  }
+  function productionState() {
+    const saved = readSaved(PRODUCTION_KEY);
+    return {
+      assignments: validAssignments(saved?.assignments) ? [...saved.assignments] : [...FIXED_ASSIGNMENTS],
+      opened: validOpened(saved?.opened) || []
+    };
+  }
+  // A test coffee must NEVER be behind the same numbered door as its production counterpart.
+  function differsAtEveryDoor(testOrder, realOrder) {
+    return validAssignments(testOrder) && testOrder.every((coffee, index) => coffee !== realOrder[index]);
+  }
+  function shuffled(values) {
+    const result = [...values];
+    for (let i = result.length - 1; i > 0; --i) {
+      const random = new Uint32Array(1);
+      if (globalThis.crypto?.getRandomValues) crypto.getRandomValues(random);
+      else random[0] = Math.floor(Math.random() * 0x100000000);
+      const j = Math.floor((random[0] / 0x100000000) * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
     }
+    return result;
+  }
+  function randomDerangement(realOrder, previous = null) {
+    // One-to-one permuted assignments, with zero matching numbered doors.
+    let result;
+    do {
+      result = shuffled(realOrder);
+    } while (!differsAtEveryDoor(result, realOrder) ||
+             (previous && result.every((coffee, i) => coffee === previous[i])));
+    return result;
+  }
+  function loadState() {
+    if (!TEST_MODE) return productionState();
+    const realOrder = productionState().assignments;
+    const saved = readSaved(TEST_KEY);
+    if (differsAtEveryDoor(saved?.assignments, realOrder)) {
+      return { assignments: [...saved.assignments], opened: validOpened(saved?.opened) || [] };
+    }
+    // Existing test installs with matching production doors are discarded safely.
+    return { assignments: randomDerangement(realOrder), opened: [] };
   }
   let state = loadState();
   function saveState() {
     try {
-      if (TEST_MODE) {
-        localStorage.setItem(TEST_KEY, JSON.stringify(state));
-      } else {
-        // Preserve original format for backward-compatible backups/versions.
-        localStorage.setItem(PRODUCTION_KEY, JSON.stringify({ opened: state.opened }));
-      }
+      localStorage.setItem(TEST_MODE ? TEST_KEY : PRODUCTION_KEY, JSON.stringify(state));
       return true;
     } catch (_) {
       showToast('Storage is unavailable. Export a backup before closing.');
       return false;
     }
   }
+  // Save freshly generated test assignments immediately so they persist across refreshes.
+  if (TEST_MODE && !differsAtEveryDoor(readSaved(TEST_KEY)?.assignments, productionState().assignments)) saveState();
+  function canShuffleReal() { return !state.opened.includes(1); }
   function unlockDate(day) { return new Date(YEAR, 11, day); }
   function isUnlocked(day) { return TEST_MODE || new Date() >= unlockDate(day); }
   function niceDate(day) {
@@ -90,21 +120,11 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, 4000);
   }
   function shuffleAssignments() {
-    const a = [...state.assignments];
-    for (let i = a.length - 1; i > 0; i--) {
-      let j;
-      if (globalThis.crypto?.getRandomValues) {
-        const r = new Uint32Array(1);
-        crypto.getRandomValues(r);
-        j = Math.floor((r[0] / 4294967296) * (i + 1));
-      } else {
-        j = Math.floor(Math.random() * (i + 1));
-      }
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    // Very unlikely, but ensure the user sees a different order after reshuffling.
-    if (a.every((coffee, i) => coffee === state.assignments[i])) [a[0], a[1]] = [a[1], a[0]];
-    return a;
+    const next = TEST_MODE
+      ? randomDerangement(productionState().assignments, state.assignments)
+      : shuffled(state.assignments);
+    if (next.every((coffee, i) => coffee === state.assignments[i])) [next[0], next[1]] = [next[1], next[0]];
+    return next;
   }
 
   function createDoors() {
@@ -114,13 +134,13 @@
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'door';
-        btn.innerHTML = `<span class="door-reveal" aria-hidden="true"><span class="little-day"></span><span class="coffee-name"></span></span>
+        btn.innerHTML = `<span class="door-reveal" aria-hidden="true"><span class="opened-number"></span></span>
           <span class="door-front" aria-hidden="true"><span class="door-num"></span>
           <svg class="door-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>
           </svg></span>`;
         btn.querySelector('.door-num').textContent = day;
-        btn.querySelector('.little-day').textContent = day;
+        btn.querySelector('.opened-number').textContent = day;
         btn.addEventListener('click', () => openDoor(day));
         row.append(btn);
         buttons.set(day, btn);
@@ -133,15 +153,21 @@
       const locked = !isOpen && !isUnlocked(day);
       button.classList.toggle('opened', isOpen);
       button.classList.toggle('locked', locked);
-      button.querySelector('.coffee-name').textContent = isOpen ? state.assignments[day - 1] : '';
       button.setAttribute('aria-label', isOpen
         ? `Day ${day}: ${state.assignments[day - 1]}. View coffee.`
         : locked ? `Day ${day}: locked until ${niceDate(day)}.`
         : `Open day ${day} to reveal your coffee.`);
-      button.title = isOpen ? `${day} December: ${state.assignments[day - 1]}`
+      button.title = isOpen ? `View revealed coffee for ${day} December`
         : locked ? `Unlocks ${niceDate(day)}` : `Open ${day} December`;
     }
     $('progress').textContent = `${state.opened.length} / 25 opened`;
+    if (!TEST_MODE) {
+      $('shuffleBtn').disabled = !canShuffleReal();
+      $('shuffleBtn').title = canShuffleReal() ? 'Shuffle the coffees before opening door 1' : 'Coffee order is fixed because door 1 has been opened';
+      $('shuffleHelp').textContent = canShuffleReal()
+        ? 'You can shuffle your coffees until you open door 1 on 1 December.'
+        : 'Coffee order fixed: door 1 has been opened.';
+    }
     if (TEST_MODE) {
       $('unlockStatus').textContent = 'Testing: all 25 doors are unlocked, whatever the date.';
     } else {
@@ -215,11 +241,16 @@
       const oldProductionBackup = !TEST_MODE && data?.version === 2 && data?.mode == null;
       if (data?.calendarId !== CALENDAR_ID || data?.year !== YEAR ||
           !validAssignments(data?.assignments) || !restored || !(sameMode || oldProductionBackup) ||
-          (!TEST_MODE && JSON.stringify(data.assignments) !== JSON.stringify(FIXED_ASSIGNMENTS))) {
+          (TEST_MODE && !differsAtEveryDoor(data.assignments, productionState().assignments)) ||
+          (!TEST_MODE && state.opened.includes(1) && JSON.stringify(data.assignments) !== JSON.stringify(state.assignments))) {
         throw new Error('This backup does not match the current calendar or mode.');
       }
-      if (!confirm('Replace opened-door progress' + (TEST_MODE ? ' and the test coffee order' : '') + ' with this backup?')) return;
-      state = { assignments: TEST_MODE ? [...data.assignments] : [...FIXED_ASSIGNMENTS], opened: restored };
+      if (!TEST_MODE && restored.includes(1) && !state.opened.includes(1) &&
+          JSON.stringify(data.assignments) !== JSON.stringify(state.assignments)) {
+        // Importing a previously committed calendar is permitted; it immediately becomes fixed.
+      }
+      if (!confirm('Replace this calendar with the saved assignments and opened-door progress?')) return;
+      state = { assignments: [...data.assignments], opened: restored };
       saveState();
       render();
       showToast('Backup restored.');
@@ -233,13 +264,22 @@
   if (TEST_MODE) {
     $('testBanner').hidden = false;
     document.title = 'TEST · ' + document.title;
-    $('shuffleBtn').addEventListener('click', () => {
-      if (!confirm('Reshuffle all 25 test coffees? This also closes every TEST door. The real calendar is unaffected.')) return;
-      state = { assignments: shuffleAssignments(), opened: [] };
-      saveState();
-      render();
-      showToast('Test coffees reshuffled. All test doors are closed.');
-    });
+  } else {
+    $('shuffleHelp').hidden = false;
+  }
+  $('shuffleBtn').addEventListener('click', () => {
+    if (!TEST_MODE && !canShuffleReal()) { showToast('Coffee order is fixed after opening door 1.'); return; }
+    const explanation = TEST_MODE
+      ? 'Reshuffle the test coffees and close all TEST doors? Each test door will contain a different coffee from the real calendar.'
+      : 'Reshuffle the real coffee order and close all doors? This will be unavailable after door 1 is opened.';
+    if (!confirm(explanation)) return;
+    if (!TEST_MODE && !canShuffleReal()) return;
+    state = { assignments: shuffleAssignments(), opened: [] };
+    saveState();
+    render();
+    showToast(TEST_MODE ? 'Test coffees reshuffled. No test door matches the real one.' : 'Coffee order reshuffled. All doors are closed.');
+  });
+  if (TEST_MODE) {
     $('resetTestBtn').addEventListener('click', () => {
       if (!confirm('Close all TEST doors? The real calendar is unaffected.')) return;
       state.opened = [];
@@ -268,11 +308,19 @@
   render();
   // Keep the date lock display in sync after midnight / app resumption.
   setInterval(render, 60_000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
-  window.addEventListener('focus', render);
+  function refreshSafely() {
+    if (TEST_MODE && !differsAtEveryDoor(state.assignments, productionState().assignments)) {
+      state = { assignments: randomDerangement(productionState().assignments), opened: [] };
+      saveState();
+    }
+    render();
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSafely(); });
+  window.addEventListener('focus', refreshSafely);
   window.addEventListener('storage', event => {
-    if (event.key === (TEST_MODE ? TEST_KEY : PRODUCTION_KEY)) {
+    if (event.key === (TEST_MODE ? TEST_KEY : PRODUCTION_KEY) || (TEST_MODE && event.key === PRODUCTION_KEY)) {
       state = loadState();
+      if (TEST_MODE) saveState();
       render();
     }
   });

@@ -26,6 +26,7 @@
     <nav class="controls" aria-label="Calendar controls">
       <span id="progress" class="progress" aria-live="polite">0 / 25 opened</span>
       <button type="button" id="installBtn" class="action primary" hidden>Install app</button>
+      <button type="button" id="shuffleBtn" class="action gold">Shuffle coffees</button>
       <button type="button" id="backupBtn" class="action">Export backup</button>
       <button type="button" id="importBtn" class="action quiet">Import backup</button>
     </nav>
@@ -34,15 +35,15 @@
   <section id="testBanner" class="test-banner" aria-label="Test mode settings" hidden>
     <div>
       <strong>Test mode</strong>
-      <p>All doors are unlocked. Test coffee assignments and opened doors are separate from your real calendar.</p>
+      <p>All doors are unlocked. Each test door contains a different coffee from the same numbered real door. Test progress is separate.</p>
     </div>
     <div class="test-actions">
-      <button type="button" id="shuffleBtn" class="action gold">Reshuffle test coffees</button>
       <button type="button" id="resetTestBtn" class="action">Close all test doors</button>
       <a class="exit-link" href="./index.html">Exit test mode</a>
     </div>
   </section>
 
+  <p id="shuffleHelp" class="shuffle-help" hidden></p>
   <div class="calendar-wrap">
     <section class="calendar" aria-label="Green V60 Advent calendar, doors 1 to 25">
       <svg class="v60" viewBox="0 0 1200 850" aria-hidden="true" preserveAspectRatio="xMidYMid meet">

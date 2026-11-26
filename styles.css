@@ -99,12 +99,14 @@ h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-weight: 500
   45% { filter: brightness(1.08); }
   100% { filter: brightness(1); }
 }
-.door-reveal .little-day { position: absolute; top: 6%; left: 9%; font-size: clamp(8px, 1.45cqw, 16px); font-weight: 850; line-height: 1; }
-.door-reveal .coffee-name {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; overflow-wrap: anywhere;
-  max-width: 100%; font-weight: 760; font-size: clamp(7px, 1.12cqw, 13px); line-height: 1.13; padding-top: 15%;
+.door-reveal { background: #fff; border-radius: inherit; }
+.door-reveal .opened-number {
+  color: var(--forest); display: flex; width: 100%; height: 100%; align-items: center; justify-content: center;
+  font-family: Georgia, "Times New Roman", serif; font-size: clamp(12px, 3.55cqw, 41px); font-weight: 700; line-height: 1;
 }
-.row6 .door-reveal .coffee-name { font-size: clamp(11px, 2cqw, 24px); -webkit-line-clamp: 2; }
+.row6 .door-reveal .opened-number { font-size: clamp(24px, 7cqw, 75px); }
+.shuffle-help { margin: 14px 0 0; font-size: .84rem; color: #587366; }
+.action:disabled { cursor: not-allowed; opacity: .48; background: #e7e9e5; border-color: #d3d8d0; }
 .meta { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: center; text-align: center; margin: 10px auto 0; color: #6e8175; font-size: .83rem; }
 .meta strong { color: var(--text); }
 .fineprint { margin: 18px auto 0; max-width: 740px; text-align: center; color: #728177; font-size: .77rem; line-height: 1.55; }
